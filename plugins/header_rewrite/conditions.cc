@@ -1245,12 +1245,18 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   }
   TSReturnCode tsSsn;
   int fd;
+  int prot = 0;
+  socklen_t len;
   struct tcp_info info;
   socklen_t tcp_info_len = sizeof(info);
   tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
   if (tsSsn != TS_SUCCESS || fd <= 0) {
     TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
   }
+  if (getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &prot, &len) < 0) {
+    TSDebug(PLUGIN_NAME, "error getting the protocol");
+  }
+  TSDebug(PLUGIN_NAME, "protocol type: %d", prot);
   if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
     TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
   }

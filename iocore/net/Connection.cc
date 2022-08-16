@@ -78,6 +78,7 @@ Server::accept(Connection *c)
   socklen_t sz = sizeof(c->addr);
 
   res = socketManager.accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+  Debug("connection", "accept");
   if (res < 0) {
     return res;
   }
@@ -140,8 +141,11 @@ add_http_filter(int fd ATS_UNUSED)
 int
 Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
+  Debug("connection", "init: setup_fd_for_listen");
   int res               = 0;
   int listen_per_thread = 0;
+  int prot              = 0;
+  int len;
 
   ink_assert(fd != NO_FD);
 
@@ -229,8 +233,12 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 #endif
   }
 
-  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
+  if (safe_getsockopt(fd, SOL_SOCKET, SO_PROTOCOL, &prot, &len) < 0) {
+    goto Lerror;
+  }
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) && prot == IPPROTO_TCP &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
+    Debug("connection", "go to Lerror 1");
     goto Lerror;
   }
 
@@ -241,6 +249,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
+  Debug("connection", "before settign IPPROTO_TCP in TCPFASTOPEN");
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
@@ -263,7 +272,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #if defined(TCP_MAXSEG)
-  if (NetProcessor::accept_mss > 0) {
+  if (NetProcessor::accept_mss > 0 && prot == IPPROTO_TCP) {
     if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
       goto Lerror;
     }
@@ -353,7 +362,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     ats_ip_copy(&addr, &accept_addr);
   }
 
-  fd = res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
+  fd = res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP);
   if (res < 0) {
     goto Lerror;
   }
@@ -363,7 +372,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_MPTCP)) < 0) {
     goto Lerror;
   }
 
