@@ -1048,7 +1048,7 @@ LocalManager::bindTcpProxyPort(HttpProxyPort &port)
     }
   }
 
-  if (port.m_mptcp) {
+  /*if (port.m_mptcp) {
 #if MPTCP_ENABLED
     int err;
 
@@ -1063,7 +1063,7 @@ LocalManager::bindTcpProxyPort(HttpProxyPort &port)
 #else
     Debug("lm_mptcp", "[bindProxyPort] Multipath TCP requested but not configured on this host");
 #endif
-  }
+  }*/
 
   if (port.m_family == AF_INET6) {
     if (setsockopt(port.m_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {

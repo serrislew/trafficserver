@@ -1298,6 +1298,26 @@ AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 
+# Check for MPTCP enabled
+enable_mptcp=no
+AC_MSG_CHECKING([whether MPTCP is defined and enabled])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <netinet/in.h>]],
+                                   [[
+				     #if IPPROTO_MPTCP != 262
+				     exit(1);
+				     #endif
+                                   ]])
+                  ],
+                  [
+                    AC_MSG_RESULT([yes])
+                    enable_mptcp=yes
+                  ],
+                  [
+                    AC_MSG_RESULT([no])
+                  ])
+AC_MSG_RESULT([$enable_mptcp])
+TS_ARG_ENABLE_VAR([use], [mptcp])
+
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
 

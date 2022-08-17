@@ -141,7 +141,6 @@ add_http_filter(int fd ATS_UNUSED)
 int
 Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
-  Debug("connection", "init: setup_fd_for_listen");
   int res               = 0;
   int listen_per_thread = 0;
   int prot              = 0;
@@ -249,7 +248,6 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 
 #ifdef TCP_FASTOPEN
-  Debug("connection", "before settign IPPROTO_TCP in TCPFASTOPEN");
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
       safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
@@ -279,7 +277,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 #endif
 
-  if (opt.f_mptcp) {
+/*  if (opt.f_mptcp) {
 #if MPTCP_ENABLED
     if (safe_setsockopt(fd, IPPROTO_TCP, MPTCP_ENABLED, SOCKOPT_ON, sizeof(int)) < 0) {
       Error("[Server::listen] Unable to enable MPTCP socket-option [%d] %s\n", errno, strerror(errno));
@@ -289,7 +287,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     Error("[Server::listen] Multipath TCP requested but not configured on this host\n");
 #endif
   }
-
+*/
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
   // data on the socket ready to be read
@@ -355,6 +353,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   ink_assert(fd == NO_FD);
   int res = 0;
   int namelen;
+  int prot = IPPROTO_TCP;
 
   if (!ats_is_ip(&accept_addr)) {
     ats_ip4_set(&addr, INADDR_ANY, 0);
@@ -362,7 +361,15 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     ats_ip_copy(&addr, &accept_addr);
   }
 
-  fd = res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP);
+#if TS_USE_MPTCP == 1
+  if (opt.f_mptcp) {
+    Debug("connection", "define socket with MPTCP");
+    prot = IPPROTO_MPTCP;
+  }
+#endif
+
+  // Debug("connection", "port: %d", addr.host_order_port());
+  fd = res = socketManager.socket(addr.sa.sa_family, SOCK_STREAM, prot);
   if (res < 0) {
     goto Lerror;
   }
@@ -372,7 +379,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_MPTCP)) < 0) {
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), prot)) < 0) {
     goto Lerror;
   }
 

@@ -88,7 +88,7 @@ SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 static bool
 mptcp_supported()
 {
-  ats_scoped_fd fd(::open("/proc/sys/net/mptcp/mptcp_enabled", O_RDONLY));
+  ats_scoped_fd fd(::open("/proc/sys/net/mptcp/enabled", O_RDONLY));
   int value = 0;
 
   if (fd) {
