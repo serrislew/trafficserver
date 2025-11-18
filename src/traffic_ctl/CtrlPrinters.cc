@@ -177,7 +177,7 @@ DiffConfigPrinter::write_output(YAML::Node const &result)
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 void
-ConfigReloadPrinter::write_output([[maybe_unused]] YAML::Node const &result)
+ConfigReloadPrinter::write_output(YAML::Node const &result)
 {
   // no op, ctrl command will handle the output directly.
   // BasePrinter will handle the error and the json output if needed.
