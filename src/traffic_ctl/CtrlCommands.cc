@@ -535,7 +535,7 @@ ConfigCommand::config_reload()
   // Handle --virtualhost option: inject as configs["virtualhost"] = "<id>"
   std::string vhost_id = get_parsed_arguments()->get("virtualhost").value();
   if (!vhost_id.empty()) {
-    configs["virtualhost"] = vhost_id;  // scalar value = ID-only reload
+    configs["virtualhost"] = vhost_id; // scalar value = ID-only reload
   }
 
   using ConfigError = config::reload::errors::ConfigReloadError;

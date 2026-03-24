@@ -4580,7 +4580,7 @@ HttpSM::do_remap_request(bool run_inline)
     if (m_remap) {
       m_remap->release();
     }
-    m_remap = rewrite_table->acquire();
+    m_remap = rewrite_table.acquire();
     ret     = remapProcessor.setup_for_remap(&t_state, m_remap);
   }
 

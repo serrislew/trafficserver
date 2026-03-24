@@ -96,7 +96,7 @@ UrlRewrite::load()
     }
   }
 
-  return load_table(config_file_path, nullptr);
+  return load_table(std::string(config_file_path.get()), nullptr);
 }
 
 bool
@@ -853,18 +853,14 @@ UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node)
   temporary_redirects.hash_lookup.reset(new URLTable);
   forward_mappings_with_recv_port.hash_lookup.reset(new URLTable);
 
-<<<<<<< HEAD
   bool parse_success;
   if (is_remap_yaml()) {
     parse_success = remap_parse_yaml(path, this);
   } else {
-    parse_success = remap_parse_config(path, this);
+    parse_success = remap_parse_config(path, this, remap_node);
   }
 
   if (!parse_success) {
-=======
-  if (!remap_parse_config(path, this, remap_node)) {
->>>>>>> 4c7bf8cae4 (init remap vhost config)
     return TS_ERROR;
   }
 

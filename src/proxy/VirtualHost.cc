@@ -350,34 +350,33 @@ VirtualHost::startup()
     Fatal("failed to load %s", ts::filename::VIRTUALHOST);
   }
 
-  config::ConfigRegistry::Get_Instance().register_config(
-      "virtualhost",                             // registry key
-      ts::filename::VIRTUALHOST,                 // default filename
-      "proxy.config.virtualhost.filename",       // record holding the filename
-      [](ConfigContext ctx) {                    // reload handler
-        ctx.in_progress();
-        auto yaml = ctx.supplied_yaml();
+  config::ConfigRegistry::Get_Instance().register_config("virtualhost",                       // registry key
+                                                         ts::filename::VIRTUALHOST,           // default filename
+                                                         "proxy.config.virtualhost.filename", // record holding the filename
+                                                         [](ConfigContext ctx) {              // reload handler
+                                                           ctx.in_progress();
+                                                           auto yaml = ctx.supplied_yaml();
 
-        // RPC-supplied scalar = single entry reload by ID
-        if (yaml && yaml.IsScalar()) {
-          std::string id = yaml.as<std::string>();
-          if (VirtualHost::reconfigure(id)) {
-            ctx.complete("Reloaded virtualhost entry: " + id);
-          } else {
-            ctx.fail("Failed to reload virtualhost entry: " + id);
-          }
-          return;
-        }
+                                                           // RPC-supplied scalar = single entry reload by ID
+                                                           if (yaml && yaml.IsScalar()) {
+                                                             std::string id = yaml.as<std::string>();
+                                                             if (VirtualHost::reconfigure(id)) {
+                                                               ctx.complete("Reloaded virtualhost entry: " + id);
+                                                             } else {
+                                                               ctx.fail("Failed to reload virtualhost entry: " + id);
+                                                             }
+                                                             return;
+                                                           }
 
-        // Full reload (file-based or no supplied content)
-        if (VirtualHost::reconfigure()) {
-          ctx.complete("Finished loading virtualhost config");
-        } else {
-          ctx.fail("Failed to load virtualhost config");
-        }
-      },
-      config::ConfigSource::FileAndRpc,          // supports RPC content
-      {"proxy.config.virtualhost.filename"});     // trigger records
+                                                           // Full reload (file-based or no supplied content)
+                                                           if (VirtualHost::reconfigure()) {
+                                                             ctx.complete("Finished loading virtualhost config");
+                                                           } else {
+                                                             ctx.fail("Failed to load virtualhost config");
+                                                           }
+                                                         },
+                                                         config::ConfigSource::FileAndRpc,       // supports RPC content
+                                                         {"proxy.config.virtualhost.filename"}); // trigger records
 }
 
 int

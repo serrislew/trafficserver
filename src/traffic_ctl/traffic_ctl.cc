@@ -173,7 +173,7 @@ main([[maybe_unused]] int argc, const char **argv)
                 "Accepts duration units: 30s, 1m, 500ms, etc. 0 means no timeout",
                 "", 1, "0")
     .with_required("--monitor")
-    
+
     // Include virtualhost option to only reload specified entry
     .add_option("--virtualhost", "", "Reload only the specific virtual host entry by id", "", 1, "");
 
