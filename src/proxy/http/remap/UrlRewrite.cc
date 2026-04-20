@@ -102,6 +102,10 @@ UrlRewrite::load()
 bool
 UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node)
 {
+  if (remap_node) {
+    this->_remap_yaml = true;
+  }
+
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
     this->ts_name = ats_stringdup(rec_str);
@@ -855,7 +859,11 @@ UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node)
 
   bool parse_success;
   if (is_remap_yaml()) {
-    parse_success = remap_parse_yaml(path, this);
+    if (remap_node) {
+      parse_success = remap_parse_yaml(remap_node, this);
+    } else {
+      parse_success = remap_parse_yaml(path, this);
+    }
   } else {
     parse_success = remap_parse_config(path, this, remap_node);
   }

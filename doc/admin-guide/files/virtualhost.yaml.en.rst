@@ -25,10 +25,10 @@ virtualhost.yaml
 
 The :file:`virtualhost.yaml` file defines configuration blocks that apply to a group of domains.
 Each virtual host entry defines a set of domains and the remap rules associated with those domains.
-Virtual host remap rules override global :file:`remap.config` rules but remain fully backward compatible
+Virtual host remap rules override global :file:`remap.yaml` rules but remain fully backward compatible
 with existing configurations. If absent, ATS behaves exactly as before.
 
-Currently, this file only supports :file:`remap.config` overrides. Future versions will expand virtual
+Currently, this file only supports :file:`remap.yaml` overrides. Future versions will expand virtual
 host support to additional configuration types (e.g. :file:`sni.yaml`, :file:`ssl_multicert.config`,
 :file:`parent.config`, etc)
 
@@ -52,7 +52,9 @@ An example configuration looks like:
          - example.com
 
        remap:
-         - map http://example.com http://origin.example.com/
+         - type: map
+           from: http://example.com
+           to: http://origin.example.com/
 
 
 ===================== ==========================================================
@@ -60,7 +62,7 @@ Field Name            Description
 ===================== ==========================================================
 ``id``                 Virtual host identifier to perform specific operations on
 ``domains``            List of domains to resolve a request to
-``remap``              List of remap rules as defined in remap.config
+``remap``              List of remap rules as defined in remap.yaml
 ===================== ==========================================================
 
 ``domains``
@@ -94,10 +96,10 @@ Evaluation Order
 1. Resolve to a single virtualhost
    a. Check for an exact domain match. If any virtual host lists the request hostname explicitly, that virtual host is selected.
    b. Check for a wildcard domain match. If any virtual host wildcard domains define a subdomain of the request hostname in the form ``*.[domain]``, that virtual host is selected.
-   c. If no matching virtual host exists, the request proceeds using global configuration (i.e :file:`remap.config`). Skip to step 3.
+   c. If no matching virtual host exists, the request proceeds using global configuration (i.e :file:`remap.yaml`). Skip to step 3.
 2. Within selected virtual host config, use virtual host remap rules.
-   a. Follow existing :file:`remap.config` rules and matching orders. If a matching remap rule is found, that remap rule is selected.
-3. If neither virtual host nor remap rules match, ATS falls back to global :file:`remap.config` resolution.
+   a. Follow existing :file:`remap.yaml` rules and matching orders. If a matching remap rule is found, that remap rule is selected.
+3. If neither virtual host nor remap rules match, ATS falls back to global :file:`remap.yaml` resolution.
 
 Only one virtual host entry may match a given request. If multiple entries could match, ATS uses the first matching
 entry defined in :file:`virtualhost.yaml`.
@@ -143,10 +145,15 @@ Examples
          - example.com
 
        remap:
-         - map http://example.com/ http://origin.example.com/
+         - type: map
+           from: http://example.com/
+           to: http://origin.example.com/
 
-   # remap.config
-   map / http://other.example.com/
+   # remap.yaml
+   remap:
+     - type: map
+       from: /
+       to: http://other.example.com/
 
 This rules translates in the following translation.
 
@@ -166,14 +173,18 @@ Client Request                                   Translated Request
          - "*.example.com"
 
        remap:
-         - regex_map http://sub[0-9]+.example.com/ http://origin$1.example.com/
+         - type: regex_map
+           from: http://sub[0-9]+.example.com/
+           to: http://origin$1.example.com/
 
-      - id: foo
+     - id: foo
        domains:
          - foo.example.com
 
        remap:
-         - map http:/foo.example.com/ http://foo.origin.com/
+         - type: map
+           from: http://foo.example.com/
+           to: http://foo.origin.com/
 
 This rules translates in the following translation.
 
@@ -189,4 +200,4 @@ Client Request                                   Translated Request
 See Also
 ========
 
-:file:`remap.config`
+:file:`remap.yaml`
