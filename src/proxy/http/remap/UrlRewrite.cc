@@ -95,6 +95,15 @@ UrlRewrite::load()
       return false;
     }
   }
+  return load_table(std::string(config_file_path.get()), nullptr);
+}
+
+bool
+UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node)
+{
+  if (remap_node) {
+    this->_remap_yaml = true;
+  }
 
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
@@ -143,7 +152,7 @@ UrlRewrite::load()
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (TS_SUCCESS == this->BuildTable(config_file_path)) {
+  if (TS_SUCCESS == this->BuildTable(config_file_path.c_str(), remap_node)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
@@ -816,7 +825,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 
 */
 int
-UrlRewrite::BuildTable(const char *path)
+UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node)
 {
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -837,7 +846,11 @@ UrlRewrite::BuildTable(const char *path)
 
   bool parse_success;
   if (is_remap_yaml()) {
-    parse_success = remap_parse_yaml(path, this);
+    if (remap_node) {
+      parse_success = remap_parse_yaml(remap_node, this);
+    } else {
+      parse_success = remap_parse_yaml(path, this);
+    }
   } else {
     parse_success = remap_parse_config(path, this);
   }
